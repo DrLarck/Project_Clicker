@@ -7,9 +7,9 @@ Role : Gere le jeu
 
 Birth : 13/10/2017 (Joyeux anniversaire maman <3)
 
-Last update : 03/11/2017
+Last update : 06/11/2017
 
-V : 0.0.5
+V : 0.0.7
 
 ------------------------ **/
 #ifndef JEU_C_INCLUDED
@@ -110,7 +110,7 @@ void jouer(SDL_Surface *ecran)
 
     versionTier_1 = 0;   /* Cumule le numéro */
     versionTier_2 = 0;   /* de version, /10  */
-    versionTier_3 = 5;   /* par tier.        */
+    versionTier_3 = 6;   /* par tier.        */
 
     /* Chargement de l'image de fond */
     fond_jeu = IMG_Load("sprite/menu_fond.png");
@@ -170,16 +170,6 @@ void jouer(SDL_Surface *ecran)
 
     // Peon : Openning
     // Qt
-    Peon_Quantite = fopen("file/item/peon.qt", "r");
-        if(Peon_Quantite != NULL)
-        {
-            fscanf(Peon_Quantite, "%d", &Peon.qt);
-            fclose(Peon_Quantite);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
     // Stat
     Peon_Statistique = fopen("file/item/peon.st", "r");
         if(Peon_Statistique != NULL)
@@ -218,6 +208,16 @@ void jouer(SDL_Surface *ecran)
         //Peon
         if(PeonTick.TickActu - PeonTick.TickPrec > Peon.tick)
         {
+            Peon_Quantite = fopen("file/item/peon.qt", "r");
+            if(Peon_Quantite != NULL)
+            {   
+                fscanf(Peon_Quantite, "%d", &Peon.qt);
+                fclose(Peon_Quantite);
+            }
+                else
+                {
+                    exit(EXIT_FAILURE);
+                }
             PlayerClic.clicActuel += (Peon.qt*Peon.stat);
 
             /* Reset de la surface qui contenait les clics */
@@ -243,7 +243,8 @@ void jouer(SDL_Surface *ecran)
             case SDL_MOUSEBUTTONDOWN : // Si le joueur enfonce le bouton de sa souris
 
             if(jeuEvent.button.y >= 520 && jeuEvent.button.y <= 520 + bouton_shopPos.h
-               && jeuEvent.button.x > ecran->w / 2 - bouton_Shop->w / 2 && jeuEvent.button.x <= ecran->w / 2 - bouton_Shop->w / 2 + bouton_shopPos.w)
+               && jeuEvent.button.x > ecran->w / 2 - bouton_Shop->w / 2 
+               && jeuEvent.button.x <= ecran->w / 2 - bouton_Shop->w / 2 + bouton_shopPos.w)
                // Si le joueur clic sur le bouton shop
                {
                    Shop(ecran);
