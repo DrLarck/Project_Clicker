@@ -7,9 +7,9 @@ Role : Gestion du shop
 
 Birth : 1/11/2017
 
-Last update : 06/11/2017
+Last update : 09/11/2017
 
-V : 0.0.6
+V : 0.0.8
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -23,6 +23,8 @@ void jouer(SDL_Surface *ecran);
 
 /* Var */
 int continuer; // Maintient le programme ouvert
+
+int checkClic = 0; // Vérifie le clic (1 si clic, 0 sinon)
 
 // struct
 struct Item
@@ -41,12 +43,14 @@ SDL_Surface *fond_shop = NULL;
 
 SDL_Surface *peon_ico = NULL;
 SDL_Surface *peon_texte = NULL;
+SDL_Surface *bouton_Jouer = NULL;
 
 // Rect
 SDL_Rect positionFondShop;
 
 SDL_Rect peon_pos;
 SDL_Rect peon_textePos;
+SDL_Rect bouton_JouerPos;
 
 // Event
 SDL_Event shopEvent;
@@ -64,14 +68,16 @@ void Shop(SDL_Surface *ecran)
     positionFondShop.x = 0;
     positionFondShop.y = 0;
 
+    /* Images */
+    // Bouton Jouer
+    bouton_Jouer = IMG_Load("sprite/play.png");
+
+    bouton_JouerPos.x = ecran->w / 2 - bouton_Jouer->w / 2;
+    bouton_JouerPos.y = 520;
+
+
     /* Init */
     continuer = 1; // Gère la fermeture de programme
-    //
-    //
-    struct Item Peon; /** 1 Clic/Peon/3sec **/
-    Peon.qt = 0; // Quantité de départ
-    Peon.stat = 1; // Clic bonus
-    Peon.tick = 10000; // Temps entre 2 clic auto
     //
 
     //
@@ -82,7 +88,15 @@ void Shop(SDL_Surface *ecran)
     FILE *peonQt = NULL;
     FILE *peonStat = NULL;
     FILE *peonTime = NULL;
-    FILE *openPeonQt = NULL;
+
+    FILE *checkPeonQt = NULL;
+    //
+    //
+    unsigned int getPeonQt = 0;
+    struct Item Peon; /** 1 Clic/Peon/3sec **/
+    Peon.qt = getPeonQt; // Quantité de départ
+    Peon.stat = 1; // Clic bonus
+    Peon.tick = 1000; // Temps entre 2 clic auto
     //
 
     /** PEON : Initialisation des fichiers **/
@@ -118,6 +132,18 @@ void Shop(SDL_Surface *ecran)
             {
                 exit(EXIT_FAILURE);
             }
+
+    checkPeonQt = fopen("file/item/peon.qt", "r");
+        if(checkPeonQt != NULL)
+        {
+            fscanf(checkPeonQt, "%d", &getPeonQt);
+            fclose(checkPeonQt);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
         // Icone
         peon_ico = IMG_Load("sprite/item/peon.png");
 
@@ -144,23 +170,45 @@ void Shop(SDL_Surface *ecran)
         switch(shopEvent.type)
         {
         case SDL_MOUSEBUTTONDOWN :
-            if()
-            Peon.qt += 1;
-            peonQt = fopen("file/item/peon.qt", "w");
-                if(peonQt != NULL)
-                {
-                  fprintf(peonQt, "%d", Peon.qt);
-                  fclose(peonQt)  ;
-                }
-                    else
-                    {
-                        exit(EXIT_FAILURE);
-                    }
+            if(SDL_BUTTON_LEFT && checkClic == 0
+               && shopEvent.button.y >= 5 && shopEvent.button.y <= 5 + peon_pos.h
+               && shopEvent.button.x > 25 - 25
+               && shopEvent.button.x <= 25 - 25 + peon_pos.w)
+            // Si clic sur l'icone peon
+               {
+                    Peon.qt += 1;
+                    peonQt = fopen("file/item/peon.qt", "w");
+                        if(peonQt != NULL)
+                        {
+                            fprintf(peonQt, "%d", Peon.qt);
+                            fclose(peonQt)  ;
+                        }
+                            else
+                            {
+                                exit(EXIT_FAILURE);
+                            }
+                    checkClic = 1; // Le joueur clique
+               }
+
+               // Si clic sur Jouer
+               if(shopEvent.button.y >= 520 && shopEvent.button.y <= 520 + bouton_JouerPos.h
+               && shopEvent.button.x > ecran->w / 2 - bouton_Jouer->w / 2
+               && shopEvent.button.x <= ecran->w / 2 - bouton_Jouer->w / 2 + bouton_JouerPos.w)
+               {
+                   jouer(ecran);
+               }
+
         break;
 
         case SDL_QUIT: // Si CROIX = Ferme l'app
             exit(EXIT_SUCCESS);
             break;
+
+        case SDL_MOUSEBUTTONUP :
+            if(SDL_BUTTON_LEFT)
+            {
+                checkClic = 0; // Le joueur ne clique plus
+            }
 
         default : break;
 
@@ -187,6 +235,7 @@ void Shop(SDL_Surface *ecran)
 
         SDL_BlitSurface(peon_ico, NULL, ecran, &peon_pos);
         SDL_BlitSurface(peon_texte, NULL, ecran, &peon_textePos);
+        SDL_BlitSurface(bouton_Jouer, NULL, ecran, &bouton_JouerPos);
 
         /* Flip ecran */
         SDL_Flip(ecran);
