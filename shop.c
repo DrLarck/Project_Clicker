@@ -7,9 +7,9 @@ Role : Gestion du shop
 
 Birth : 1/11/2017
 
-Last update : 09/11/2017
+Last update : 12/11/2017
 
-V : 0.0.8
+V : 0.0.9
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -21,10 +21,17 @@ V : 0.0.8
 /* Functions */
 void jouer(SDL_Surface *ecran);
 
+void ItemSave_Peon(unsigned int);
+
+/* File */
+FILE *PeonSauvegarde = NULL;
+
 /* Var */
 int continuer; // Maintient le programme ouvert
 
 int checkClic = 0; // Vérifie le clic (1 si clic, 0 sinon)
+
+unsigned int getPeonQt;
 
 // struct
 struct Item
@@ -63,6 +70,14 @@ SDL_Color shop_CouleurText = {0,0,0};
 
 void Shop(SDL_Surface *ecran)
 {
+    /** Sauvegarde de Peon **/
+    PeonSauvegarde = fopen("file/peon_save.lrk", "r");
+    if(PeonSauvegarde != NULL)
+    {
+        fscanf(PeonSauvegarde, "%d", &getPeonQt);
+        fclose(PeonSauvegarde);
+    }
+
     /* Fond */
     fond_shop = IMG_Load("sprite/menu_fond.png");
     positionFondShop.x = 0;
@@ -92,7 +107,7 @@ void Shop(SDL_Surface *ecran)
     FILE *checkPeonQt = NULL;
     //
     //
-    unsigned int getPeonQt = 0;
+
     struct Item Peon; /** 1 Clic/Peon/3sec **/
     Peon.qt = getPeonQt; // Quantité de départ
     Peon.stat = 1; // Clic bonus
@@ -100,17 +115,6 @@ void Shop(SDL_Surface *ecran)
     //
 
     /** PEON : Initialisation des fichiers **/
-    peonQt = fopen("file/item/peon.qt", "w"); // Inscrit la quantité de péon que possède le joueur.
-        if(peonQt != NULL)
-        {
-            fprintf(peonQt, "%d", Peon.qt);
-            fclose(peonQt);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
-
     peonStat = fopen("file/item/peon.st", "w"); // Inscrit les stat du peon.
         if(peonStat != NULL)
         {
@@ -127,17 +131,6 @@ void Shop(SDL_Surface *ecran)
         {
             fprintf(peonTime, "%d", Peon.tick);
             fclose(peonTime);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
-
-    checkPeonQt = fopen("file/item/peon.qt", "r");
-        if(checkPeonQt != NULL)
-        {
-            fscanf(checkPeonQt, "%d", &getPeonQt);
-            fclose(checkPeonQt);
         }
             else
             {
@@ -177,6 +170,7 @@ void Shop(SDL_Surface *ecran)
             // Si clic sur l'icone peon
                {
                     Peon.qt += 1;
+                    getPeonQt++;
                     peonQt = fopen("file/item/peon.qt", "w");
                         if(peonQt != NULL)
                         {
@@ -191,10 +185,20 @@ void Shop(SDL_Surface *ecran)
                }
 
                // Si clic sur Jouer
-               if(shopEvent.button.y >= 520 && shopEvent.button.y <= 520 + bouton_JouerPos.h
+               if(SDL_BUTTON_LEFT && shopEvent.button.y >= 520 && shopEvent.button.y <= 520 + bouton_JouerPos.h
                && shopEvent.button.x > ecran->w / 2 - bouton_Jouer->w / 2
                && shopEvent.button.x <= ecran->w / 2 - bouton_Jouer->w / 2 + bouton_JouerPos.w)
                {
+                   peonQt = fopen("file/item/peon.qt", "w");
+                        if(peonQt != NULL)
+                        {
+                            fprintf(peonQt, "%d", Peon.qt);
+                            fclose(peonQt)  ;
+                        }
+                            else
+                            {
+                                exit(EXIT_FAILURE);
+                            }
                    jouer(ecran);
                }
 
@@ -220,12 +224,10 @@ void Shop(SDL_Surface *ecran)
             exit(EXIT_SUCCESS);
             break;
 
-        case SDLK_j: // Si -J retourne sur le jeu
-            jouer(ecran);
-            break;
-
         default : break;
         }
+
+        ItemSave_Peon(getPeonQt); // Envoi du nombre de Péon pour sauvegarde
 
         /* Reset de l'ecran */
         SDL_FillRect(ecran, NULL, SDL_MapRGB(ecran->format, 0,0,0));
@@ -243,5 +245,22 @@ void Shop(SDL_Surface *ecran)
     } // Fin boucle principale
 
 } // Fin de la fonction Shop()
+
+void ItemSave_Peon(unsigned int PeonStock)
+{
+    /* Fichiers */
+    PeonSauvegarde = fopen("file/peon_save.lrk", "w");
+    if(PeonSauvegarde != NULL)
+    {
+        fprintf(PeonSauvegarde, "%d", getPeonQt);
+        fclose(PeonSauvegarde);
+    }
+    else
+    {
+        exit(EXIT_FAILURE);
+    }
+
+
+} // Fin de la fonction ItemSave_Peon();
 
 #endif // SHOP_C_INCLUDED
