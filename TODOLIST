@@ -1,0 +1,44 @@
+Debug :
+• Général :
+	• Lors du clic sur le bouton Shop le nombre de clic s'incrémente
+	  en fonction du nombre de péon / pareil lors du clic sur le
+	  bouton Jouer.
+
+Todo list :
+
+• Dans `jeu.c` :
+	• Rendre le mob cliquable.
+		• Retravailler le design du mob. Et l'animer à chaque
+		  clic.
+	
+	• Ajout d'animations/petites images en lien avec les items
+	  possédés par le joueur.
+
+• Dans `shop.c` :
+	• Ajout de nouveaux items 
+		• Péon en chef : 2 clics/ 8 sec.
+	
+	• Ajout d'un clic booster : 
+		• À chaque clic effectué, le joueur augmente la valeur
+		  du compteur plus rapidement (+1/+2/+3/...)
+			• Permettre l'utilisation des clics comme
+			  "monnaie" (suppression de clic à l'achat
+			  d'item dans le shop)
+	• Faire en sorte que l'auto-click fonctionne aussi dans la
+	  boutique.
+	
+
+
+• En général :
+	• Retravailler le design général de l'application.
+		• Permettre une animation à chaque clic.
+	• Dans `shop.c`
+		• Afficher les textes en rouges lorsque le joueur
+		  ne peut pas se les procurer.
+			• Afficher un compteur d'item.
+
+	• Faire un système de level qui permettrait l'obtention d'item
+	  plus puissants
+
+
+
