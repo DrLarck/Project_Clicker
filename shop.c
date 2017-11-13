@@ -7,9 +7,9 @@ Role : Gestion du shop
 
 Birth : 1/11/2017
 
-Last update : 12/11/2017
+Last update : 13/11/2017
 
-V : 0.0.9
+V : 0.1.0
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -17,11 +17,15 @@ V : 0.0.9
 
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include "constante.h"
 
 /* Functions */
 void jouer(SDL_Surface *ecran);
 
 /* File */
+// Joueur
+FILE *playerClic = NULL; // Appelle du nombre de clics du joueur
+
 //Peon
 FILE *peonQt = NULL;
 FILE *peonStat = NULL;
@@ -35,6 +39,7 @@ int continuer; // Maintient le programme ouvert
 int checkClic = 0; // Vérifie le clic (1 si clic, 0 sinon)
 
 unsigned int getPeonQt;
+unsigned long playerClicStock;
 
 // struct
 struct Item
@@ -73,6 +78,18 @@ SDL_Color shop_CouleurText = {0,0,0};
 
 void Shop(SDL_Surface *ecran)
 {
+    /** Ouverture de la sauvegarde clic **/
+    playerClic = fopen("file/c_save.lrk", "r"); // Stocke le nombre de clic que possède le joueur dans playerClicStock;
+        if(playerClic != NULL)
+        {
+            fscanf(playerClic, "%ld", &playerClicStock);
+            fclose(playerClic);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
     /** Sauvegarde de Peon **/
     PeonSauvegarde = fopen("file/item/peon.qt", "r");
     if(PeonSauvegarde != NULL)
@@ -80,6 +97,7 @@ void Shop(SDL_Surface *ecran)
         fscanf(PeonSauvegarde, "%d", &getPeonQt);
         fclose(PeonSauvegarde);
     }
+
     /* Fond */
     fond_shop = IMG_Load("sprite/menu_fond.png");
     positionFondShop.x = 0;
@@ -150,15 +168,15 @@ void Shop(SDL_Surface *ecran)
         {
         case SDL_MOUSEBUTTONDOWN :
             // Peon
-            if(SDL_BUTTON_LEFT && checkClic == 0
+            if(playerClicStock >= 100 && SDL_BUTTON_LEFT && checkClic == 0
                && shopEvent.button.y >= 5 && shopEvent.button.y <= 5 + peon_pos.h
                && shopEvent.button.x > 25 - 25
                && shopEvent.button.x <= 25 - 25 + peon_pos.w)
-            // Si clic sur l'icone peon
+            // Si clic sur l'icone peon et playerClicStock >= 100
                {
                     Peon.qt += 1;
                     getPeonQt++;
-                    peonQt = fopen("file/item/peon.qt", "w");
+                    peonQt = fopen("file/item/peon.qt", "w"); // Incrémente peon.qt
                         if(peonQt != NULL)
                         {
                             fprintf(peonQt, "%d", Peon.qt);
@@ -168,6 +186,21 @@ void Shop(SDL_Surface *ecran)
                             {
                                 exit(EXIT_FAILURE);
                             }
+
+                    playerClicStock -= PEON_PRIX; // Soustracion du prix
+
+                    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
+                        if(playerClic != NULL)
+                        {
+                            fprintf(playerClic, "%ld", playerClicStock);
+                            fclose(playerClic);
+                        }
+                            else
+                            {
+                                exit(EXIT_FAILURE);
+                            }
+
+
                     checkClic = 1; // Le joueur clique
                }
                //
