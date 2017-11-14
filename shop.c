@@ -7,9 +7,9 @@ Role : Gestion du shop
 
 Birth : 1/11/2017
 
-Last update : 13/11/2017
+Last update : 14/11/2017
 
-V : 0.1.1
+V : 0.1.2
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -18,10 +18,7 @@ V : 0.1.1
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "constante.h"
-
-/* Functions */
-void jouer(SDL_Surface *ecran);
-void Reset_Compteur_Clic(unsigned long, SDL_Surface *screen);
+#include "shop.h"
 
 /* File */
 // Joueur
@@ -36,13 +33,13 @@ FILE *PeonSauvegarde = NULL;
 
 /* Var */
 int continuer; // Maintient le programme ouvert
-
 int checkClic = 0; // Vérifie le clic (1 si clic, 0 sinon)
-
 unsigned int getPeonQt;
 unsigned long playerClicStock;
 
+// Textes
 char compteurClicTexte_Shop[500] = "";
+char compteurItem_Peon[500] = "";
 
 // struct
 struct Item
@@ -64,6 +61,7 @@ SDL_Surface *bouton_Jouer = NULL;
     // Texte
 SDL_Surface *peon_texte = NULL;
 SDL_Surface *joueurClic_texte = NULL;
+SDL_Surface *texte_ItemPeon = NULL;
 
 // Rect
 SDL_Rect positionFondShop;
@@ -73,6 +71,7 @@ SDL_Rect bouton_JouerPos;
     // Texte
 SDL_Rect peon_textePos;
 SDL_Rect joueurClicTexte_pos;
+SDL_Rect texte_ItemPeon_pos;
 
 // Event
 SDL_Event shopEvent;
@@ -175,6 +174,13 @@ void Shop(SDL_Surface *ecran)
         peon_texte = TTF_RenderText_Blended(shop_police, "Peon : 100 = +1/10s", shop_CouleurText); // Texte Peon
         peon_textePos.x = 60;
         peon_textePos.y = 20;
+            //Affichage du nbr de Peons
+        sprintf(compteurItem_Peon, "Own : %d", Peon.qt);
+        texte_ItemPeon = TTF_RenderText_Blended(shop_police, compteurItem_Peon, shop_CouleurText);
+        texte_ItemPeon_pos.x = 60;
+        texte_ItemPeon_pos.y = 33;
+
+
 
     while(continuer)
     {
@@ -217,7 +223,9 @@ void Shop(SDL_Surface *ecran)
                                 exit(EXIT_FAILURE);
                             }
 
-                    Reset_Compteur_Clic(playerClicStock, ecran);
+                    Reset_Compteur_Clic(playerClicStock, ecran); // Reset des affichages
+                    Reset_Compteur_Peon(Peon.qt, ecran);
+
                     checkClic = 1; // Le joueur clique
                }
                //
@@ -268,6 +276,7 @@ void Shop(SDL_Surface *ecran)
         // Textes
         SDL_BlitSurface(peon_texte, NULL, ecran, &peon_textePos);
         SDL_BlitSurface(joueurClic_texte, NULL, ecran, &joueurClicTexte_pos);
+        SDL_BlitSurface(texte_ItemPeon, NULL, ecran, &texte_ItemPeon_pos);
 
 
         /* Flip ecran */
@@ -277,7 +286,7 @@ void Shop(SDL_Surface *ecran)
 
 } // Fin de la fonction Shop()
 
-void Reset_Compteur_Clic(unsigned long NewClickValue, SDL_Surface *screen)
+void Reset_Compteur_Clic(unsigned long NewClickValue, SDL_Surface *screen) // Reset des affichages
 {
     /* Reset */
     SDL_FreeSurface(joueurClic_texte);
@@ -291,4 +300,19 @@ void Reset_Compteur_Clic(unsigned long NewClickValue, SDL_Surface *screen)
     SDL_Flip(screen);
 
 } // Fin de la fonction Reset_Compteur_Clic
+
+void Reset_Compteur_Peon(unsigned int NewPeonValue, SDL_Surface *ecran) // Reset des affichages
+{
+    /* Reset */
+    SDL_FreeSurface(texte_ItemPeon);
+    /* Inscription de la nouvelle valeur */
+    sprintf(compteurItem_Peon, "Own : %d", NewPeonValue);
+    texte_ItemPeon = TTF_RenderText_Blended(shop_police, compteurItem_Peon,
+                                                shop_CouleurText);
+    /* Blit de la nouvelle surface */
+    SDL_BlitSurface(texte_ItemPeon, NULL, ecran, &texte_ItemPeon_pos);
+
+    SDL_Flip(ecran);
+
+} // Fin Reset_Compteur_Peon()
 #endif // SHOP_C_INCLUDED
