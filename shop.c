@@ -5,11 +5,11 @@ Author : DrLarck
 
 Role : Gestion du shop
 
-Birth : 1/11/2017
+Birth : 01/11/2017
 
-Last update : 14/11/2017
+Last update : 19/11/2017
 
-V : 0.1.2
+V : 0.1.3
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -18,7 +18,16 @@ V : 0.1.2
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "constante.h"
-#include "shop.h"
+
+/* Fonctions */
+void Reset_Compteur_Clic(unsigned long, SDL_Surface *screen);//Reset le nbr de clics dans shop
+
+void jouer(SDL_Surface *ecran); // Fonction jouer qui ouvre jeu.c
+
+void Reset_Compteur_Peon(unsigned int, SDL_Surface*); // Reset le nbr de Peon a afficher
+
+void Init_Peon_Files(unsigned int, unsigned int); // Initialise les fichiers du Peon, recoit Peon.stat && Peon.tick
+void Open_Peon_Save(void); // Ouvre le nbr de péons
 
 /* File */
 // Joueur
@@ -85,17 +94,8 @@ SDL_Color shop_CouleurText = {0,0,0};
 
 void Shop(SDL_Surface *ecran)
 {
-    /** Ouverture de la sauvegarde clic **/
-    playerClic = fopen("file/c_save.lrk", "r"); // Stocke le nombre de clic que possède le joueur dans playerClicStock;
-        if(playerClic != NULL)
-        {
-            fscanf(playerClic, "%ld", &playerClicStock);
-            fclose(playerClic);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
+    // Ouvre le nombre de Peons
+    Open_Peon_Save();
 
     /** Sauvegarde de Peon **/
     PeonSauvegarde = fopen("file/item/peon.qt", "r");
@@ -120,8 +120,6 @@ void Shop(SDL_Surface *ecran)
 
     /* Init */
     continuer = 1; // Gère la fermeture de programme
-
-    /* Fichiers */
     //
     //
     struct Item Peon; // 1 Clic/Peon/3sec
@@ -131,28 +129,8 @@ void Shop(SDL_Surface *ecran)
     //
     //
 
-    /** PEON : Initialisation des fichiers **/
-    peonStat = fopen("file/item/peon.st", "w"); // Inscrit les stat du peon.
-        if(peonStat != NULL)
-        {
-            fprintf(peonStat, "%d", Peon.stat);
-            fclose(peonStat);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
-
-    peonTime = fopen("file/item/peon.time", "w"); // Inscrit les secondes avant tick du Peon.
-        if(peonTime != NULL)
-        {
-            fprintf(peonTime, "%d", Peon.tick);
-            fclose(peonTime);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
+        /** PEON : Initialisation des fichiers **/
+        Init_Peon_Files(Peon.stat, Peon.tick); // Envoie des stats et du tick
 
         // Icone
         peon_ico = IMG_Load("sprite/item/peon.png");
@@ -179,8 +157,6 @@ void Shop(SDL_Surface *ecran)
         texte_ItemPeon = TTF_RenderText_Blended(shop_police, compteurItem_Peon, shop_CouleurText);
         texte_ItemPeon_pos.x = 60;
         texte_ItemPeon_pos.y = 33;
-
-
 
     while(continuer)
     {
@@ -315,4 +291,47 @@ void Reset_Compteur_Peon(unsigned int NewPeonValue, SDL_Surface *ecran) // Reset
     SDL_Flip(ecran);
 
 } // Fin Reset_Compteur_Peon()
+
+void Init_Peon_Files(unsigned int stat, unsigned int tick)
+{
+    /** PEON : Initialisation des fichiers **/
+    peonStat = fopen("file/item/peon.st", "w"); // Inscrit les stat du peon.
+        if(peonStat != NULL)
+        {
+            fprintf(peonStat, "%d", stat);
+            fclose(peonStat);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
+    peonTime = fopen("file/item/peon.time", "w"); // Inscrit les secondes avant tick du Peon.
+        if(peonTime != NULL)
+        {
+            fprintf(peonTime, "%d", tick);
+            fclose(peonTime);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
+} // Fin Init_Peon_Files
+
+void Open_Peon_Save(void)
+{
+    /** Ouverture de la sauvegarde clic **/
+    playerClic = fopen("file/c_save.lrk", "r"); // Stocke le nombre de clic que possède le joueur dans playerClicStock;
+        if(playerClic != NULL)
+        {
+            fscanf(playerClic, "%ld", &playerClicStock);
+            fclose(playerClic);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
+} // Fin Open_Peon_Save
 #endif // SHOP_C_INCLUDED
