@@ -9,7 +9,7 @@ Birth : 01/11/2017
 
 Last update : 21/11/2017
 
-V : 0.1.4
+V : 0.1.5
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -56,7 +56,9 @@ unsigned long playerClicStock;
 
 // Textes
 char compteurClicTexte_Shop[500] = "";
+    // Items
 char compteurItem_Peon[500] = "";
+char compteurItem_PeonChef[500] = "";
 
 // struct
 struct Item
@@ -81,9 +83,14 @@ SDL_Surface *peonchef_ico_nope = NULL;
 SDL_Surface *peonchef_ico_appuye = NULL;
 
     // Texte
+            // Peon
 SDL_Surface *peon_texte = NULL;
-SDL_Surface *joueurClic_texte = NULL;
 SDL_Surface *texte_ItemPeon = NULL;
+            // Peon_Chef
+SDL_Surface *peonChef_texte = NULL;
+SDL_Surface *texte_ItemPeonChef = NULL;
+
+SDL_Surface *joueurClic_texte = NULL;
 
 // Rect
 SDL_Rect positionFondShop;
@@ -92,11 +99,15 @@ SDL_Rect bouton_JouerPos;
 SDL_Rect peon_pos;
     // Peon_Chef
 SDL_Rect peonChef_pos;
-
     // Texte
+        //Peon
 SDL_Rect peon_textePos;
-SDL_Rect joueurClicTexte_pos;
 SDL_Rect texte_ItemPeon_pos;
+        //Peon_Chef
+SDL_Rect peonChef_textePos;
+SDL_Rect texte_ItemPeonChef_pos;
+
+SDL_Rect joueurClicTexte_pos;
 
 // Event
 SDL_Event shopEvent;
@@ -208,6 +219,15 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
         texte_ItemPeon_pos.x = 60;
         texte_ItemPeon_pos.y = 33;
 
+        //Affichage des infos de Peon_Chef
+        peonChef_texte = TTF_RenderText_Blended(shop_police, "Chef Peon : 500 = +1/8,5s", shop_CouleurText);
+        peonChef_textePos.x = 60;
+        peonChef_textePos.y = 70;
+            //Affichage du nbr de Peons
+        sprintf(compteurItem_PeonChef, "Own : %d", getPeonChefQt);
+        texte_ItemPeonChef = TTF_RenderText_Blended(shop_police, compteurItem_PeonChef, shop_CouleurText);
+        texte_ItemPeonChef_pos.x = 60;
+        texte_ItemPeonChef_pos.y = 83;
     while(continuer)
     {
         SDL_PollEvent(&shopEvent);
@@ -272,6 +292,20 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
                             {
                                 exit(EXIT_FAILURE);
                             }
+                    playerClicStock -= PEON_CHEF_PRIX;
+                    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
+                        if(playerClic != NULL)
+                        {
+                            fprintf(playerClic, "%ld", playerClicStock);
+                            fclose(playerClic);
+                        }
+                            else
+                            {
+                                exit(EXIT_FAILURE);
+                            }
+
+                    Reset_Compteur_Clic(playerClicStock, ecran); // Reset des affichages
+                    Reset_Compteur_PeonChef(getPeonChefQt, ecran);
                     checkClic = 1;
                }
 
@@ -322,10 +356,13 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
         SDL_BlitSurface(peonChef_ico, NULL, ecran, &peonChef_pos);
 
         // Textes
+            // Item
         SDL_BlitSurface(peon_texte, NULL, ecran, &peon_textePos);
-        SDL_BlitSurface(joueurClic_texte, NULL, ecran, &joueurClicTexte_pos);
         SDL_BlitSurface(texte_ItemPeon, NULL, ecran, &texte_ItemPeon_pos);
-
+        SDL_BlitSurface(peonChef_texte, NULL, ecran, &peonChef_textePos);
+        SDL_BlitSurface(texte_ItemPeonChef, NULL, ecran, &texte_ItemPeonChef_pos);
+        //
+        SDL_BlitSurface(joueurClic_texte, NULL, ecran, &joueurClicTexte_pos);
 
         /* Flip ecran */
         SDL_Flip(ecran);
@@ -442,4 +479,19 @@ void Open_PeonChef_Save(void)
         }
 
 } // Fin Open_PeonChef_Save
+
+void Reset_Compteur_PeonChef(unsigned int NewPeonChefValue, SDL_Surface *ecran)
+{
+    /* Reset */
+    SDL_FreeSurface(texte_ItemPeonChef);
+    /* Inscription de la nouvelle valeur */
+    sprintf(compteurItem_PeonChef, "Own : %d", NewPeonChefValue);
+    texte_ItemPeonChef = TTF_RenderText_Blended(shop_police, compteurItem_PeonChef,
+                                                shop_CouleurText);
+    /* Blit de la nouvelle surface */
+    SDL_BlitSurface(texte_ItemPeonChef, NULL, ecran, &texte_ItemPeonChef_pos);
+
+    SDL_Flip(ecran);
+
+} //Fin Reset_Compteur_PeonChef
 #endif // SHOP_C_INCLUDED
