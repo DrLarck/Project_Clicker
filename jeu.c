@@ -7,9 +7,9 @@ Role : Gere le jeu
 
 Birth : 13/10/2017 (Joyeux anniversaire maman <3)
 
-Last update : 06/11/2017
+Last update : 21/11/2017
 
-V : 0.0.7
+V : 0.1.6
 
 ------------------------ **/
 #ifndef JEU_C_INCLUDED
@@ -18,26 +18,38 @@ V : 0.0.7
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "shop.c"
+#include "jeu.h"
+
 
 /* Functions */
 unsigned int Sauvegarder(unsigned int); // Fonction qui permettra la sauvegarde
+
+// Item
+    // Peon_Chef
+void Open_PeonChef_Files(void); // Ouvre et inscrit les valeurs des fichiers dans des var.
 
 
 /* Variables */
 int nonStop = 1; // Permet de maintenir le programme ouvert
 int verifClic = 0; // Si le joueur effectue un clic += 1
-int versionTier_1, versionTier_2, versionTier_3;
+int versionTier_1 = 0;
+int versionTier_2 = 1;
+int versionTier_3 = 6;
+
+unsigned int qt_PeonChef;
+unsigned int stat_PeonChef;
+unsigned int time_PeonChef;
 
 unsigned int clicStock; // Stock les clics de c_save.lrk
 
-char compteurVersionTexte[50] = "";
-char compteurClicTexte[50] = "";
+char compteurVersionTexte[500] = "";
+char compteurClicTexte[500] = "";
 
 // Temps
 int tempsActuel = 0, tempsPrec = 0;
 
 // Struct
-typedef struct Clic
+struct Clic
 {
   unsigned int clicActuel;
   unsigned int clicPrec;;
@@ -56,8 +68,16 @@ struct Ticks
     unsigned int TickPrec;
 };
 
-// Pointeurs
-
+// Fichiers
+FILE *checkClicSave = NULL;
+    // Peon
+FILE *Peon_Quantite;
+FILE *Peon_Statistique;
+FILE *Peon_Tick;
+    // Peon_Chef
+FILE *get_PeonChef_Qt;
+FILE *get_PeonChef_Stat;
+FILE *get_PeonChef_Tick;
 
 /* SDL's var */
 // Surface
@@ -89,8 +109,6 @@ SDL_Color couleurTextClic = {0,0,0};
 void jouer(SDL_Surface *ecran)
 {
     /* Fichiers Sauvegarde */
-    FILE *checkClicSave = NULL;
-
     checkClicSave = fopen("file/c_save.lrk", "r"); // Ouverture en mode lecture de c_save
         if(checkClicSave != NULL)
         {
@@ -102,15 +120,14 @@ void jouer(SDL_Surface *ecran)
             exit(EXIT_FAILURE);
         }
 
+    // Fichiers : Peon_Chef
+    Open_PeonChef_Files();
+
     /* Init */
     struct Clic PlayerClic;
 
     PlayerClic.clicActuel = clicStock; // Stock les clics pour la sauvegarde
     PlayerClic.clicPrec = 0;
-
-    versionTier_1 = 0;   /* Cumule le numéro */
-    versionTier_2 = 0;   /* de version, /10  */
-    versionTier_3 = 6;   /* par tier.        */
 
     /* Chargement de l'image de fond */
     fond_jeu = IMG_Load("sprite/menu_fond.png");
@@ -162,12 +179,15 @@ void jouer(SDL_Surface *ecran)
     Peon.stat = 0;
     Peon.tick = 0;
 
-    /** Fichiers Shop **/
-    // Peon : init
-    FILE *Peon_Quantite;
-    FILE *Peon_Statistique;
-    FILE *Peon_Tick;
+    // Peon_Chef
+    struct AutoClic PeonChef;
+    struct Ticks PeonChef_Ticks;
 
+    PeonChef.qt;
+    PeonChef.stat = stat_PeonChef;
+    PeonChef.tick = time_PeonChef;
+
+    /** Fichiers Shop **/
     // Peon : Openning
     // Qt
     // Stat
@@ -197,12 +217,14 @@ void jouer(SDL_Surface *ecran)
 
     // Timers
     PeonTick.TickPrec = 0;
+    PeonChef_Ticks.TickPrec = 0;
 
     while(nonStop)
     {
         SDL_PollEvent(&jeuEvent);
 
         PeonTick.TickActu = SDL_GetTicks();
+        PeonChef_Ticks.TickActu = SDL_GetTicks();
 
         /** Click auto **/
         //Peon
@@ -210,7 +232,7 @@ void jouer(SDL_Surface *ecran)
         {
             Peon_Quantite = fopen("file/item/peon.qt", "r");
             if(Peon_Quantite != NULL)
-            {   
+            {
                 fscanf(Peon_Quantite, "%d", &Peon.qt);
                 fclose(Peon_Quantite);
             }
@@ -227,9 +249,22 @@ void jouer(SDL_Surface *ecran)
             sprintf(compteurClicTexte, "Clics : %d", PlayerClic.clicActuel);
             texteClicSurface = TTF_RenderText_Blended(police, compteurClicTexte,
                                                           couleurTextClic);
-
             PeonTick.TickPrec = PeonTick.TickActu;
 
+        }
+
+        if(PeonChef_Ticks.TickActu - PeonChef_Ticks.TickPrec > time_PeonChef)
+        {
+            PlayerClic.clicActuel += (qt_PeonChef*stat_PeonChef);
+            /* Reset de la surface qui contenait les clics */
+            SDL_FreeSurface(texteClicSurface);
+
+            /* Inscription du nouveau montant de clic */
+            sprintf(compteurClicTexte, "Clics : %d", PlayerClic.clicActuel);
+            texteClicSurface = TTF_RenderText_Blended(police, compteurClicTexte,
+                                                          couleurTextClic);
+
+            PeonChef_Ticks.TickPrec = PeonChef_Ticks.TickActu;
         }
 
         /* Fermeture avec Croix */
@@ -242,8 +277,8 @@ void jouer(SDL_Surface *ecran)
 
             case SDL_MOUSEBUTTONDOWN : // Si le joueur enfonce le bouton de sa souris
 
-            if(jeuEvent.button.y >= 520 && jeuEvent.button.y <= 520 + bouton_shopPos.h
-               && jeuEvent.button.x > ecran->w / 2 - bouton_Shop->w / 2 
+            if(SDL_BUTTON_LEFT && jeuEvent.button.y >= 520 && jeuEvent.button.y <= 520 + bouton_shopPos.h
+               && jeuEvent.button.x > ecran->w / 2 - bouton_Shop->w / 2
                && jeuEvent.button.x <= ecran->w / 2 - bouton_Shop->w / 2 + bouton_shopPos.w)
                // Si le joueur clic sur le bouton shop
                {
@@ -288,10 +323,6 @@ void jouer(SDL_Surface *ecran)
         /* Fermeture avec ECHAP */
         switch(jeuEvent.key.keysym.sym)
         {
-        case SDLK_s : // Presser -S appelle la fonction shop
-            Shop(ecran);
-            break;
-
         case SDLK_ESCAPE :
             nonStop = 0;
             break;
@@ -327,7 +358,6 @@ unsigned int Sauvegarder(unsigned int ClicSave) // Sauvegarde le nombre de clics
 {
     /* Init des fichiers */
     FILE *saveClic = NULL; // Fichier sauvegarde clic
-    FILE *saveItem_1 = NULL; // Fichier qui sauvegarde le nombre d'item_1
 
     /* Ouverture/creation des fichiers */
     saveClic = fopen("file/c_save.lrk", "w+");
@@ -343,4 +373,26 @@ unsigned int Sauvegarder(unsigned int ClicSave) // Sauvegarde le nombre de clics
 
 } // Fin fonction Sauvegarder()
 
+void Open_PeonChef_Files(void)
+{
+    get_PeonChef_Qt = fopen("file/item/peon_chef.qt", "r");
+        if(get_PeonChef_Qt != NULL)
+        {
+            fscanf(get_PeonChef_Qt, "%d", &qt_PeonChef);
+            fclose(get_PeonChef_Qt);
+        }
+
+    get_PeonChef_Stat = fopen("file/item/peon_chef.stat", "r");
+        if(get_PeonChef_Stat != NULL)
+        {
+            fscanf(get_PeonChef_Stat, "%d", &stat_PeonChef);
+            fclose(get_PeonChef_Stat);
+        }
+    get_PeonChef_Tick = fopen("file/item/peon_chef.time", "r");
+        if(get_PeonChef_Tick != NULL)
+        {
+            fscanf(get_PeonChef_Tick, "%d", &time_PeonChef);
+            fclose(get_PeonChef_Tick);
+        }
+} // Fin Open_PeonChef_Files
 #endif
