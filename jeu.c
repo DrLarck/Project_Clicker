@@ -9,7 +9,7 @@ Birth : 13/10/2017 (Joyeux anniversaire maman <3)
 
 Last update : 21/11/2017
 
-V : 0.1.6
+V : 0.1.7
 
 ------------------------ **/
 #ifndef JEU_C_INCLUDED
@@ -23,8 +23,11 @@ V : 0.1.6
 
 /* Functions */
 unsigned int Sauvegarder(unsigned int); // Fonction qui permettra la sauvegarde
+void Open_Clic_Sauvegarde(void); // Ouvre le fichier qui contient le nombre de clics sauvegardés
 
 // Item
+    // Peon
+void Open_Peon_Files(void);
     // Peon_Chef
 void Open_PeonChef_Files(void); // Ouvre et inscrit les valeurs des fichiers dans des var.
 
@@ -36,20 +39,23 @@ int versionTier_1 = 0;
 int versionTier_2 = 1;
 int versionTier_3 = 6;
 
+// Item Var
+    //Péon
+unsigned int qt_Peon;
+unsigned int stat_Peon;
+unsigned int time_Peon;
+    // Peon_Chef
 unsigned int qt_PeonChef;
 unsigned int stat_PeonChef;
 unsigned int time_PeonChef;
+//
+unsigned int clicStock; // récupère les clics de c_save.lrk
 
-unsigned int clicStock; // Stock les clics de c_save.lrk
-
-char compteurVersionTexte[500] = "";
-char compteurClicTexte[500] = "";
-
-// Temps
-int tempsActuel = 0, tempsPrec = 0;
-
+char compteurVersionTexte[500] = ""; // Affiche la version du jeu en bas à gauche de l'ecran
+char compteurClicTexte[500] = ""; // Affiche le nbr de clic du joueur
+//
 // Struct
-struct Clic
+struct Clic // A SUPPRIMER ET REMPLACER <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 {
   unsigned int clicActuel;
   unsigned int clicPrec;;
@@ -78,7 +84,8 @@ FILE *Peon_Tick;
 FILE *get_PeonChef_Qt;
 FILE *get_PeonChef_Stat;
 FILE *get_PeonChef_Tick;
-
+//
+//
 /* SDL's var */
 // Surface
 SDL_Surface *texteClicSurface = NULL; // Stock le compteur de clic
@@ -101,7 +108,7 @@ SDL_Event jeuEvent;
 
 // TTF
 TTF_Font *police; // Stock la police d'écriture
-TTF_Font *policeVersion;
+TTF_Font *policeVersion; // Police de la version du jeu (en bas à gauche)
 
 // color
 SDL_Color couleurTextClic = {0,0,0};
@@ -109,18 +116,12 @@ SDL_Color couleurTextClic = {0,0,0};
 void jouer(SDL_Surface *ecran)
 {
     /* Fichiers Sauvegarde */
-    checkClicSave = fopen("file/c_save.lrk", "r"); // Ouverture en mode lecture de c_save
-        if(checkClicSave != NULL)
-        {
-            fscanf(checkClicSave, "%d", &clicStock); // Stock le nombre inscrit
-            fclose(checkClicSave);
-        }
-        else
-        {
-            exit(EXIT_FAILURE);
-        }
+    Open_Clic_Sauvegarde(); // Ouvre la sauvegarde
 
-    // Fichiers : Peon_Chef
+    // Fichiers
+        // Péon
+    Open_Peon_Files();
+        // Péon_Chef
     Open_PeonChef_Files();
 
     /* Init */
@@ -176,8 +177,8 @@ void jouer(SDL_Surface *ecran)
     struct Ticks PeonTick;
 
     Peon.qt = 0;
-    Peon.stat = 0;
-    Peon.tick = 0;
+    Peon.stat = stat_Peon;
+    Peon.tick = time_Peon;
 
     // Peon_Chef
     struct AutoClic PeonChef;
@@ -191,27 +192,6 @@ void jouer(SDL_Surface *ecran)
     // Peon : Openning
     // Qt
     // Stat
-    Peon_Statistique = fopen("file/item/peon.st", "r");
-        if(Peon_Statistique != NULL)
-        {
-            fscanf(Peon_Statistique, "%d", &Peon.stat);
-            fclose(Peon_Statistique);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
-   // Ticks
-    Peon_Tick = fopen("file/item/peon.time", "r");
-        if(Peon_Tick != NULL)
-        {
-            fscanf(Peon_Tick, "%d", &Peon.tick);
-            fclose(Peon_Tick);
-        }
-            else
-            {
-                exit(EXIT_FAILURE);
-            }
     //
 
 
@@ -331,7 +311,7 @@ void jouer(SDL_Surface *ecran)
         }
 
 
-        Sauvegarder(PlayerClic.clicActuel);
+        Sauvegarder(PlayerClic.clicActuel); // Sauvegarde le nombre de clics du joueur.
 
         /* Reset l'ecran */
         SDL_FillRect(ecran, NULL, SDL_MapRGB(ecran->format, 0,0,0));
@@ -373,6 +353,32 @@ unsigned int Sauvegarder(unsigned int ClicSave) // Sauvegarde le nombre de clics
 
 } // Fin fonction Sauvegarder()
 
+void Open_Peon_Files(void)
+{
+    Peon_Statistique = fopen("file/item/peon.st", "r");
+        if(Peon_Statistique != NULL)
+        {
+            fscanf(Peon_Statistique, "%d", &stat_Peon);
+            fclose(Peon_Statistique);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
+    Peon_Tick = fopen("file/item/peon.time", "r");
+        if(Peon_Tick != NULL)
+        {
+            fscanf(Peon_Tick, "%d", &time_Peon);
+            fclose(Peon_Tick);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
+} // Fin Open_Peon_Files
+
 void Open_PeonChef_Files(void)
 {
     get_PeonChef_Qt = fopen("file/item/peon_chef.qt", "r");
@@ -395,4 +401,18 @@ void Open_PeonChef_Files(void)
             fclose(get_PeonChef_Tick);
         }
 } // Fin Open_PeonChef_Files
+
+void Open_Clic_Sauvegarde(void)
+{
+    checkClicSave = fopen("file/c_save.lrk", "r"); // Ouverture en mode lecture de c_save
+        if(checkClicSave != NULL)
+        {
+            fscanf(checkClicSave, "%d", &clicStock); // Stock le nombre inscrit
+            fclose(checkClicSave);
+        }
+        else
+        {
+            exit(EXIT_FAILURE);
+        }
+}
 #endif
