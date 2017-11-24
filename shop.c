@@ -9,7 +9,7 @@ Birth : 01/11/2017
 
 Last update : 24/11/2017
 
-V : 0.1.7
+V : 0.1.8
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -21,16 +21,19 @@ V : 0.1.7
 
 /* Fonctions */
 void Reset_Compteur_Clic(unsigned long, SDL_Surface *screen);//Reset le nbr de clics dans shop
+void Refresh_C_Save(unsigned long); // Refresh le fichier sauvegarde
 
 void jouer(SDL_Surface *ecran); // Fonction jouer qui ouvre jeu.c
     // Péon
 void Init_Peon_Files(unsigned int, unsigned int); // Initialise les fichiers du Peon, recoit Peon.stat && Peon.tick
 void Reset_Compteur_Peon(unsigned int, SDL_Surface*); // Reset le nbr de Peon a afficher
 void Open_Peon_Save(void); // Ouvre le nbr de péons
+void Add_Peon(void); // Ajoute la nouvelle valeur au fichier peon.qt
     // Péon en chef
 void Init_PeonChef_Files(unsigned int, unsigned int); // Recoit PeonChef.stat et PeonChef.tick
 void Reset_Compteur_PeonChef(unsigned int, SDL_Surface*);
 void Open_PeonChef_Save(void);
+void Add_Peon_Chef(void); // Rf. Add_Peon()
 
 /* File */
 // Joueur
@@ -77,6 +80,8 @@ SDL_Surface *fond_shop = NULL;
 SDL_Surface *bouton_Jouer = NULL;
     // Peon
 SDL_Surface *peon_ico = NULL;
+SDL_Surface *peon_ico_nope = NULL;
+SDL_Surface *peon_ico_appuye = NULL;
     // PeonChef
 SDL_Surface *peonChef_ico = NULL;
 SDL_Surface *peonchef_ico_nope = NULL;
@@ -181,14 +186,16 @@ void Shop(SDL_Surface *ecran)
     //
     //
 
-/** PEON : Initialisation des fichiers **/
-Init_Peon_Files(Peon.stat, Peon.tick); // Envoie des stats et du tick
-/** PEON : Initialisation des fichiers **/
-Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
+        /** PEON : Initialisation des fichiers **/
+        Init_Peon_Files(Peon.stat, Peon.tick); // Envoie des stats et du tick
+        /** PEON : Initialisation des fichiers **/
+        Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
 
         // Icone 50*50 = Intervale de 10px entre chaque
             // Peon
         peon_ico = IMG_Load("sprite/item/peon.png");
+        peon_ico_nope = IMG_Load("sprite/item/peon_nope.png");
+        peon_ico_appuye = IMG_Load("sprite/item/peon_appuye.png");
         peon_pos.x = 5;
         peon_pos.y = 5;
             // Peon_Chef
@@ -243,31 +250,20 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
                && shopEvent.button.x <= 25 - 25 + peon_pos.w)
             // Si clic sur l'icone peon et playerClicStock >= 100
                {
+
+                // Permet de faire une animation
+                SDL_FillRect(ecran, NULL, SDL_MapRGB(ecran->format, 0, 0, 0));
+                SDL_BlitSurface(fond_shop, NULL, ecran, &positionFondShop);
+                SDL_BlitSurface(peon_ico_appuye, NULL, ecran, &peon_pos);
+                SDL_Flip(ecran);
+
                     Peon.qt += 1;
                     getPeonQt++;
-                    peonQt = fopen("file/item/peon.qt", "w"); // Incrémente peon.qt
-                        if(peonQt != NULL)
-                        {
-                            fprintf(peonQt, "%d", Peon.qt);
-                            fclose(peonQt)  ;
-                        }
-                            else
-                            {
-                                exit(EXIT_FAILURE);
-                            }
-
+                    
+                    Add_Peon();
                     playerClicStock -= PEON_PRIX; // Soustracion du prix
 
-                    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
-                        if(playerClic != NULL)
-                        {
-                            fprintf(playerClic, "%ld", playerClicStock);
-                            fclose(playerClic);
-                        }
-                            else
-                            {
-                                exit(EXIT_FAILURE);
-                            }
+                    Refresh_C_Save(playerClicStock);
 
                     Reset_Compteur_Clic(playerClicStock, ecran); // Reset des affichages
                     Reset_Compteur_Peon(Peon.qt, ecran); // Envoie la nouvelle quantité
@@ -281,28 +277,13 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
                && shopEvent.button.x > 25 - 25
                && shopEvent.button.x <= 25 - 25 + peonChef_pos.w)
                {
-                   getPeonChefQt++;
-                   peonChefQt = fopen("file/item/peon_chef.qt", "w");
-                        if(peonChefQt != NULL)
-                        {
-                            fprintf(peonChefQt, "%d", getPeonChefQt);
-                            fclose(peonChefQt);
-                        }
-                            else
-                            {
-                                exit(EXIT_FAILURE);
-                            }
+                    getPeonChefQt++;
+                   
+                    Add_Peon_Chef();
+
                     playerClicStock -= PEON_CHEF_PRIX;
-                    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
-                        if(playerClic != NULL)
-                        {
-                            fprintf(playerClic, "%ld", playerClicStock);
-                            fclose(playerClic);
-                        }
-                            else
-                            {
-                                exit(EXIT_FAILURE);
-                            }
+
+                    Refresh_C_Save(playerClicStock);
 
                     Reset_Compteur_Clic(playerClicStock, ecran); // Reset des affichages
                     Reset_Compteur_PeonChef(getPeonChefQt, ecran);
@@ -352,8 +333,26 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
         SDL_BlitSurface(fond_shop, NULL, ecran, &positionFondShop);
         SDL_BlitSurface(bouton_Jouer, NULL, ecran, &bouton_JouerPos);
             // Items
-        SDL_BlitSurface(peon_ico, NULL, ecran, &peon_pos);
-        SDL_BlitSurface(peonChef_ico, NULL, ecran, &peonChef_pos);
+                //Peon
+        if(playerClicStock < PEON_PRIX) // Si le joueur a moins de 100 alors s'affiche en rouge
+        {
+            SDL_BlitSurface(peon_ico_nope, NULL, ecran, &peon_pos);
+        }
+            else // Sinon s'affiche normalement
+            {
+                SDL_BlitSurface(peon_ico, NULL, ecran, &peon_pos);
+            }
+            //
+                //Peon_Chef
+        if (playerClicStock < PEON_CHEF_PRIX) // Si le joueur a moins de 250 alors s'affiche en rouge
+        {
+            SDL_BlitSurface(peonchef_ico_nope, NULL, ecran, &peonChef_pos);
+        }
+            else // Sinon s'affiche normalement
+            {
+                SDL_BlitSurface(peonChef_ico, NULL, ecran, &peonChef_pos);
+            }
+        //
 
         // Textes
             // Item
@@ -494,4 +493,48 @@ void Reset_Compteur_PeonChef(unsigned int NewPeonChefValue, SDL_Surface *ecran)
     SDL_Flip(ecran);
 
 } //Fin Reset_Compteur_PeonChef
+
+void Add_Peon(void)
+{
+    peonQt = fopen("file/item/peon.qt", "w"); // Incrémente peon.qt
+        if(peonQt != NULL)
+         {
+            fprintf(peonQt, "%d", getPeonQt);
+            fclose(peonQt)  ;
+         }
+            else
+             {
+                 exit(EXIT_FAILURE);
+             }
+} // Fin Add_Peon()
+
+void Add_Peon_Chef(void)
+{
+    peonChefQt = fopen("file/item/peon_chef.qt", "w");
+        if(peonChefQt != NULL)
+        {
+            fprintf(peonChefQt, "%d", getPeonChefQt);
+            fclose(peonChefQt);
+        }
+            else
+            {
+                 exit(EXIT_FAILURE);
+            }
+
+} // Fin Add_Peon_Chef()
+
+void Refresh_C_Save(unsigned long NewLongValue)
+{
+    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
+         if(playerClic != NULL)
+            {
+                fprintf(playerClic, "%ld", NewLongValue);
+                fclose(playerClic);
+            }
+                else
+                {
+                      exit(EXIT_FAILURE);
+                }
+
+} // Fin Reset_C_Save()
 #endif // SHOP_C_INCLUDED
