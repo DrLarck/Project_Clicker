@@ -7,7 +7,7 @@ Role : Gere le jeu
 
 Birth : 13/10/2017 (Joyeux anniversaire maman <3)
 
-Last update : 23/11/2017
+Last update : 24/11/2017
 
 V : 0.1.7
 
@@ -24,7 +24,6 @@ V : 0.1.7
 /* Functions */
 unsigned int Sauvegarder(unsigned int); // Fonction qui permettra la sauvegarde
 void Open_Clic_Sauvegarde(void); // Ouvre le fichier qui contient le nombre de clics sauvegardés
-void Reset_Auto_Clic(SDL_Surface*, SDL_Surface*); // Envoie texteClicSurface (reset le compteur clic) et *ecran
 
 // Item
     // Peon
@@ -51,11 +50,24 @@ unsigned int stat_PeonChef;
 unsigned int time_PeonChef;
 //
 unsigned int clicStock; // récupère les clics de c_save.lrk
-//
+
 char compteurVersionTexte[500] = ""; // Affiche la version du jeu en bas à gauche de l'ecran
 char compteurClicTexte[500] = ""; // Affiche le nbr de clic du joueur
 //
 // Struct
+struct Clic // A SUPPRIMER ET REMPLACER <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+{
+  unsigned int clicActuel;
+  unsigned int clicPrec;;
+};
+
+struct AutoClic
+{
+    unsigned int qt;
+    unsigned int stat;
+    unsigned int tick;
+};
+
 struct Ticks
 {
     unsigned int TickActu;
@@ -112,6 +124,12 @@ void jouer(SDL_Surface *ecran)
         // Péon_Chef
     Open_PeonChef_Files();
 
+    /* Init */
+    struct Clic PlayerClic;
+
+    PlayerClic.clicActuel = clicStock; // Stock les clics pour la sauvegarde
+    PlayerClic.clicPrec = 0;
+
     /* Chargement de l'image de fond */
     fond_jeu = IMG_Load("sprite/menu_fond.png");
 
@@ -125,7 +143,7 @@ void jouer(SDL_Surface *ecran)
     policeVersion = TTF_OpenFont("font/calibri.ttf", 14); // Créer la police de la version
 
     /* Inscrit le nombre de clics dans la chaine de char à afficher */
-    sprintf(compteurClicTexte, "Clics : %d", clicStock);
+    sprintf(compteurClicTexte, "Clics : %d", PlayerClic.clicActuel);
     texteClicSurface = TTF_RenderText_Blended(police, compteurClicTexte,
                                                       couleurTextClic);
 
@@ -155,10 +173,27 @@ void jouer(SDL_Surface *ecran)
 
     /** Shop Struct **/
     // Peon
+    struct AutoClic Peon;
     struct Ticks PeonTick;
 
+    Peon.qt = qt_Peon;
+    Peon.stat = stat_Peon;
+    Peon.tick = time_Peon;
+
     // Peon_Chef
+    struct AutoClic PeonChef;
     struct Ticks PeonChef_Ticks;
+
+    PeonChef.qt;
+    PeonChef.stat = stat_PeonChef;
+    PeonChef.tick = time_PeonChef;
+
+    /** Fichiers Shop **/
+    // Peon : Openning
+    // Qt
+    // Stat
+    //
+
 
     // Timers
     PeonTick.TickPrec = 0;
@@ -173,22 +208,31 @@ void jouer(SDL_Surface *ecran)
 
         /** Click auto **/
         //Peon
-        if(PeonTick.TickActu - PeonTick.TickPrec > time_Peon)
+        if(PeonTick.TickActu - PeonTick.TickPrec > Peon.tick)
         {
-            clicStock += (qt_Peon*stat_Peon);
+            PlayerClic.clicActuel += (Peon.qt*Peon.stat);
 
-            Reset_Auto_Clic(texteClicSurface, ecran);
+            /* Reset de la surface qui contenait les clics */
+            SDL_FreeSurface(texteClicSurface);
 
+            /* Inscription du nouveau montant de clic */
+            sprintf(compteurClicTexte, "Clics : %d", PlayerClic.clicActuel);
+            texteClicSurface = TTF_RenderText_Blended(police, compteurClicTexte,
+                                                          couleurTextClic);
             PeonTick.TickPrec = PeonTick.TickActu;
 
         }
 
-        //Peon_Chef
-        if(PeonChef_Ticks.TickActu - PeonChef_Ticks.TickPrec > time_PeonChef) // Auto-clic du Péon_Chef
+        if(PeonChef_Ticks.TickActu - PeonChef_Ticks.TickPrec > time_PeonChef)
         {
-            clicStock += (qt_PeonChef*stat_PeonChef);
+            PlayerClic.clicActuel += (qt_PeonChef*stat_PeonChef);
+            /* Reset de la surface qui contenait les clics */
+            SDL_FreeSurface(texteClicSurface);
 
-            Reset_Auto_Clic(texteClicSurface, ecran);
+            /* Inscription du nouveau montant de clic */
+            sprintf(compteurClicTexte, "Clics : %d", PlayerClic.clicActuel);
+            texteClicSurface = TTF_RenderText_Blended(police, compteurClicTexte,
+                                                          couleurTextClic);
 
             PeonChef_Ticks.TickPrec = PeonChef_Ticks.TickActu;
         }
@@ -215,9 +259,17 @@ void jouer(SDL_Surface *ecran)
             if(SDL_BUTTON_LEFT && verifClic == 0) // Si c'est le clic gauche et qu'il n'y a pas de clic actif (verifClic = 0)
             {
 
-            clicStock++; // Clic +1
+            PlayerClic.clicActuel++; // Clic +1
 
-            Reset_Auto_Clic(texteClicSurface, ecran);
+            /* Reset de la surface qui contenait les clics */
+            SDL_FreeSurface(texteClicSurface);
+
+            /* Inscription du nouveau montant de clic */
+            sprintf(compteurClicTexte, "Clics : %d", PlayerClic.clicActuel);
+            texteClicSurface = TTF_RenderText_Blended(police, compteurClicTexte,
+                                                          couleurTextClic);
+
+            SDL_BlitSurface(texteClicSurface, NULL, ecran, &positionTexteClic);
 
             verifClic = 1; // Clic effectué
 
@@ -249,7 +301,7 @@ void jouer(SDL_Surface *ecran)
         }
 
 
-        Sauvegarder(clicStock); // Sauvegarde le nombre de clics du joueur.
+        Sauvegarder(PlayerClic.clicActuel); // Sauvegarde le nombre de clics du joueur.
 
         /* Reset l'ecran */
         SDL_FillRect(ecran, NULL, SDL_MapRGB(ecran->format, 0,0,0));
@@ -272,20 +324,6 @@ void jouer(SDL_Surface *ecran)
     } // Fin boucle principale
 } // Fin fonction jouer()
 
-void Open_Clic_Sauvegarde(void)
-{
-    checkClicSave = fopen("file/c_save.lrk", "r"); // Ouverture en mode lecture de c_save
-        if(checkClicSave != NULL)
-        {
-            fscanf(checkClicSave, "%d", &clicStock); // Stock le nombre inscrit
-            fclose(checkClicSave);
-        }
-        else
-        {
-            exit(EXIT_FAILURE);
-        }
-} // Fin Open_Clic_Sauvegarde
-
 unsigned int Sauvegarder(unsigned int ClicSave) // Sauvegarde le nombre de clics dans le fichier c_save.lrk
 {
     /* Init des fichiers */
@@ -304,20 +342,6 @@ unsigned int Sauvegarder(unsigned int ClicSave) // Sauvegarde le nombre de clics
         }
 
 } // Fin fonction Sauvegarder()
-
-void Reset_Auto_Clic(SDL_Surface *texteClic, SDL_Surface* screen)
-{
-    /* Reset de la surface qui contenait les clics */
-    SDL_FreeSurface(texteClic);
-
-    /* Inscription du nouveau montant de clic */
-    sprintf(compteurClicTexte, "Clics : %d", clicStock);
-    texteClic = TTF_RenderText_Blended(police, compteurClicTexte,
-                                                          couleurTextClic);
-
-    SDL_BlitSurface(texteClic, NULL, screen, &positionTexteClic);
-
-} // Fin Reset_Auto_Clic
 
 void Open_Peon_Files(void)
 {
@@ -377,4 +401,18 @@ void Open_PeonChef_Files(void)
             fclose(get_PeonChef_Tick);
         }
 } // Fin Open_PeonChef_Files
+
+void Open_Clic_Sauvegarde(void)
+{
+    checkClicSave = fopen("file/c_save.lrk", "r"); // Ouverture en mode lecture de c_save
+        if(checkClicSave != NULL)
+        {
+            fscanf(checkClicSave, "%d", &clicStock); // Stock le nombre inscrit
+            fclose(checkClicSave);
+        }
+        else
+        {
+            exit(EXIT_FAILURE);
+        }
+}
 #endif
