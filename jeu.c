@@ -7,7 +7,7 @@ Role : Gere le jeu
 
 Birth : 13/10/2017 (Joyeux anniversaire maman <3)
 
-Last update : 21/11/2017
+Last update : 24/11/2017
 
 V : 0.1.7
 
@@ -37,7 +37,7 @@ int nonStop = 1; // Permet de maintenir le programme ouvert
 int verifClic = 0; // Si le joueur effectue un clic += 1
 int versionTier_1 = 0;
 int versionTier_2 = 1;
-int versionTier_3 = 6;
+int versionTier_3 = 7;
 
 // Item Var
     //Péon
@@ -176,7 +176,7 @@ void jouer(SDL_Surface *ecran)
     struct AutoClic Peon;
     struct Ticks PeonTick;
 
-    Peon.qt = 0;
+    Peon.qt = qt_Peon;
     Peon.stat = stat_Peon;
     Peon.tick = time_Peon;
 
@@ -210,16 +210,6 @@ void jouer(SDL_Surface *ecran)
         //Peon
         if(PeonTick.TickActu - PeonTick.TickPrec > Peon.tick)
         {
-            Peon_Quantite = fopen("file/item/peon.qt", "r");
-            if(Peon_Quantite != NULL)
-            {
-                fscanf(Peon_Quantite, "%d", &Peon.qt);
-                fclose(Peon_Quantite);
-            }
-                else
-                {
-                    exit(EXIT_FAILURE);
-                }
             PlayerClic.clicActuel += (Peon.qt*Peon.stat);
 
             /* Reset de la surface qui contenait les clics */
@@ -355,6 +345,16 @@ unsigned int Sauvegarder(unsigned int ClicSave) // Sauvegarde le nombre de clics
 
 void Open_Peon_Files(void)
 {
+    Peon_Quantite = fopen("file/item/peon.qt", "r");
+            if(Peon_Quantite != NULL)
+            {
+                fscanf(Peon_Quantite, "%d", &qt_Peon);
+                fclose(Peon_Quantite);
+            }
+                else
+                {
+                    exit(EXIT_FAILURE);
+                }
     Peon_Statistique = fopen("file/item/peon.st", "r");
         if(Peon_Statistique != NULL)
         {
