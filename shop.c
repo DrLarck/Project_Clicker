@@ -7,9 +7,9 @@ Role : Gestion du shop
 
 Birth : 01/11/2017
 
-Last update : 21/11/2017
+Last update : 24/11/2017
 
-V : 0.1.5
+V : 0.1.7
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -176,7 +176,7 @@ void Shop(SDL_Surface *ecran)
     // Péon en Chef
     struct Item Peon_Chef;
     Peon_Chef.qt = getPeonChefQt;
-    Peon_Chef.stat = 1;
+    Peon_Chef.stat = 2;
     Peon_Chef.tick = 8500; // 8.5s
     //
     //
@@ -220,7 +220,7 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
         texte_ItemPeon_pos.y = 33;
 
         //Affichage des infos de Peon_Chef
-        peonChef_texte = TTF_RenderText_Blended(shop_police, "Chef Peon : 500 = +1/8,5s", shop_CouleurText);
+        peonChef_texte = TTF_RenderText_Blended(shop_police, "Chef Peon : 250 = +2/8,5s", shop_CouleurText);
         peonChef_textePos.x = 60;
         peonChef_textePos.y = 70;
             //Affichage du nbr de Peons
@@ -237,7 +237,7 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
         {
         case SDL_MOUSEBUTTONDOWN :
             // Peon
-            if(playerClicStock >= 100 && SDL_BUTTON_LEFT && checkClic == 0
+            if(playerClicStock >= PEON_PRIX && SDL_BUTTON_LEFT && checkClic == 0
                && shopEvent.button.y >= 5 && shopEvent.button.y <= 5 + peon_pos.h
                && shopEvent.button.x > 25 - 25
                && shopEvent.button.x <= 25 - 25 + peon_pos.w)
@@ -276,7 +276,7 @@ Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
                }
                //
                // Peon_Chef
-               if(playerClicStock >= 500 && SDL_BUTTON_LEFT && checkClic == 0
+               if(playerClicStock >= PEON_CHEF_PRIX && SDL_BUTTON_LEFT && checkClic == 0
                && shopEvent.button.y >= 60 && shopEvent.button.y <= 60 + peonChef_pos.h
                && shopEvent.button.x > 25 - 25
                && shopEvent.button.x <= 25 - 25 + peonChef_pos.w)
