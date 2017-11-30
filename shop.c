@@ -7,9 +7,9 @@ Role : Gestion du shop
 
 Birth : 01/11/2017
 
-Last update : 24/11/2017
+Last update : 30/11/2017
 
-V : 0.1.8
+V : 0.1.9
 
 ------------------------ **/
 #ifndef SHOP_C_INCLUDED
@@ -18,6 +18,7 @@ V : 0.1.8
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include "constante.h"
+#include "shop_sdl.h" /* Contient toutes les variables SDL */
 
 /* Fonctions */
 void Reset_Compteur_Clic(unsigned long, SDL_Surface *screen);//Reset le nbr de clics dans shop
@@ -34,6 +35,11 @@ void Init_PeonChef_Files(unsigned int, unsigned int); // Recoit PeonChef.stat et
 void Reset_Compteur_PeonChef(unsigned int, SDL_Surface*);
 void Open_PeonChef_Save(void);
 void Add_Peon_Chef(void); // Rf. Add_Peon()
+    // Multiplicateur
+void Init_Multiplicateur_Files(unsigned int); // Recoit qu'un seul paramètre (le nombre de clic bonus)
+void Reset_Compteur_Multiplicateur(unsigned int, SDL_Surface*);
+void Open_Multiplicateur_Save(void);
+void Add_Multiplicateur(void);
 
 /* File */
 // Joueur
@@ -49,12 +55,17 @@ FILE *peonChefQt = NULL;
 FILE *peonChefStat = NULL;
 FILE *peonChefTime = NULL;
 FILE *PeonChefSauvegarde = NULL;
+    // Multiplicateur
+FILE *multiplicateurQt = NULL;
+FILE *multiplicateurStat = NULL;
+FILE *mmultiplicateurSauvegarde = NULL;
 
 /* Var */
 int continuer; // Maintient le programme ouvert
 int checkClic = 0; // Vérifie le clic (1 si clic, 0 sinon)
 unsigned int getPeonQt;
 unsigned int getPeonChefQt;
+unsigned int getMultiplicateurQt;
 unsigned long playerClicStock;
 
 // Textes
@@ -62,6 +73,7 @@ char compteurClicTexte_Shop[500] = "";
     // Items
 char compteurItem_Peon[500] = "";
 char compteurItem_PeonChef[500] = "";
+char compteurItem_Multiplicateur[50] = "";
 
 // struct
 struct Item
@@ -72,58 +84,8 @@ struct Item
     unsigned long prix;
     char texte;
 };
-
-// Pointeur
-/* SDL's var */
-// Surface
-SDL_Surface *fond_shop = NULL;
-SDL_Surface *bouton_Jouer = NULL;
-    // Peon
-SDL_Surface *peon_ico = NULL;
-SDL_Surface *peon_ico_nope = NULL;
-SDL_Surface *peon_ico_appuye = NULL;
-    // PeonChef
-SDL_Surface *peonChef_ico = NULL;
-SDL_Surface *peonchef_ico_nope = NULL;
-SDL_Surface *peonchef_ico_appuye = NULL;
-
-    // Texte
-            // Peon
-SDL_Surface *peon_texte = NULL;
-SDL_Surface *texte_ItemPeon = NULL;
-            // Peon_Chef
-SDL_Surface *peonChef_texte = NULL;
-SDL_Surface *texte_ItemPeonChef = NULL;
-
-SDL_Surface *joueurClic_texte = NULL;
-
-// Rect
-SDL_Rect positionFondShop;
-SDL_Rect bouton_JouerPos;
-    // Peon
-SDL_Rect peon_pos;
-    // Peon_Chef
-SDL_Rect peonChef_pos;
-    // Texte
-        //Peon
-SDL_Rect peon_textePos;
-SDL_Rect texte_ItemPeon_pos;
-        //Peon_Chef
-SDL_Rect peonChef_textePos;
-SDL_Rect texte_ItemPeonChef_pos;
-
-SDL_Rect joueurClicTexte_pos;
-
-// Event
-SDL_Event shopEvent;
-
-// TTF
-TTF_Font *shop_police = NULL; // Police du shop
-TTF_Font *joueurClic_police = NULL; // Police du compteur de clic du joueur
-
-// Color
-SDL_Color shop_CouleurText = {0,0,0};
-
+//
+//
 void Shop(SDL_Surface *ecran)
 {
 
@@ -184,12 +146,22 @@ void Shop(SDL_Surface *ecran)
     Peon_Chef.stat = 2;
     Peon_Chef.tick = 8500; // 8.5s
     //
+    // Multiplicateur
+    struct  Item Multi;
+    Multi.qt = getMultiplicateurQt;
+    Multi.stat = 1; // Nombre de clic en addition
+    //
     //
 
         /** PEON : Initialisation des fichiers **/
         Init_Peon_Files(Peon.stat, Peon.tick); // Envoie des stats et du tick
+        //
         /** PEON : Initialisation des fichiers **/
         Init_PeonChef_Files(Peon_Chef.stat, Peon_Chef.tick);
+        //
+        /** Multiplicateur : Initialisation des fichiers **/
+        Init_Multiplicateur_Files(Multi.stat);
+        //
 
         // Icone 50*50 = Intervale de 10px entre chaque
             // Peon
@@ -218,23 +190,29 @@ void Shop(SDL_Surface *ecran)
         //Affichage des infos de Peon
         shop_police = TTF_OpenFont("font/calibri.ttf", 14); // Taille du prix
         peon_texte = TTF_RenderText_Blended(shop_police, "Peon : 100 = +1/10s", shop_CouleurText); // Texte Peon
+
         peon_textePos.x = 60;
         peon_textePos.y = 20;
+
             //Affichage du nbr de Peons
         sprintf(compteurItem_Peon, "Own : %d", Peon.qt);
         texte_ItemPeon = TTF_RenderText_Blended(shop_police, compteurItem_Peon, shop_CouleurText);
+
         texte_ItemPeon_pos.x = 60;
         texte_ItemPeon_pos.y = 33;
 
         //Affichage des infos de Peon_Chef
         peonChef_texte = TTF_RenderText_Blended(shop_police, "Chef Peon : 250 = +2/8,5s", shop_CouleurText);
+
         peonChef_textePos.x = 60;
         peonChef_textePos.y = 70;
             //Affichage du nbr de Peons
         sprintf(compteurItem_PeonChef, "Own : %d", getPeonChefQt);
         texte_ItemPeonChef = TTF_RenderText_Blended(shop_police, compteurItem_PeonChef, shop_CouleurText);
+
         texte_ItemPeonChef_pos.x = 60;
         texte_ItemPeonChef_pos.y = 83;
+
     while(continuer)
     {
         SDL_PollEvent(&shopEvent);
@@ -259,7 +237,7 @@ void Shop(SDL_Surface *ecran)
 
                     Peon.qt += 1;
                     getPeonQt++;
-                    
+
                     Add_Peon();
                     playerClicStock -= PEON_PRIX; // Soustracion du prix
 
@@ -278,7 +256,7 @@ void Shop(SDL_Surface *ecran)
                && shopEvent.button.x <= 25 - 25 + peonChef_pos.w)
                {
                     getPeonChefQt++;
-                   
+
                     Add_Peon_Chef();
 
                     playerClicStock -= PEON_CHEF_PRIX;
@@ -479,6 +457,21 @@ void Open_PeonChef_Save(void)
 
 } // Fin Open_PeonChef_Save
 
+void Init_Multiplicateur_Files(unsigned int StatMultiplicateur)
+{
+    multiplicateurStat = fopen("file/item/multiplicateur.stat", "w");
+        if(multiplicateurStat != NULL)
+        {
+            fprintf(multiplicateurStat, "%d", StatMultiplicateur);
+            fclose(multiplicateurStat);
+        }
+            else
+            {
+                exit(EXIT_FAILURE);
+            }
+
+} // Fin Init_Multiplicateur_Files()
+
 void Reset_Compteur_PeonChef(unsigned int NewPeonChefValue, SDL_Surface *ecran)
 {
     /* Reset */
@@ -493,6 +486,21 @@ void Reset_Compteur_PeonChef(unsigned int NewPeonChefValue, SDL_Surface *ecran)
     SDL_Flip(ecran);
 
 } //Fin Reset_Compteur_PeonChef
+
+void Refresh_C_Save(unsigned long NewLongValue)
+{
+    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
+         if(playerClic != NULL)
+            {
+                fprintf(playerClic, "%ld", NewLongValue);
+                fclose(playerClic);
+            }
+                else
+                {
+                      exit(EXIT_FAILURE);
+                }
+
+} // Fin Reset_C_Save()
 
 void Add_Peon(void)
 {
@@ -523,18 +531,4 @@ void Add_Peon_Chef(void)
 
 } // Fin Add_Peon_Chef()
 
-void Refresh_C_Save(unsigned long NewLongValue)
-{
-    playerClic = fopen("file/c_save.lrk", "w"); // Inscrit la nouvelle valeur de c_save.lrk
-         if(playerClic != NULL)
-            {
-                fprintf(playerClic, "%ld", NewLongValue);
-                fclose(playerClic);
-            }
-                else
-                {
-                      exit(EXIT_FAILURE);
-                }
-
-} // Fin Reset_C_Save()
 #endif // SHOP_C_INCLUDED
